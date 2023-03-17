@@ -17,24 +17,15 @@ db.init_app(app)
 api = Api(app)
 
 
-
-
-
-
-
-
-
-
-
-
-
 class Scientists(Resource):
 
     def get(self):
-        scientist = [science.to_dict() for science in Scientist.query.all()]
-        return make_response(scientist, 200)
-
-
+        scientist = [sci.to_dict() for sci in Scientist.query.all()]
+        return make_response(
+            scientist, 
+            200
+        )
+    
 
     def post(self):
         data = request.get_json()
@@ -52,13 +43,14 @@ class Scientists(Resource):
                 "errors": [e.__str__()]
             }
             return make_response(
-                message,
+                message, 
                 422
             )
-
-
-        return make_response(new_scientist.to_dict(), 201)
-
+        
+        return make_response(
+            new_scientist.to_dict(),
+            201
+            )
 
 
 api.add_resource(Scientists, "/scientists")
@@ -68,32 +60,35 @@ api.add_resource(Scientists, "/scientists")
 
 
 
-
-
-
-
-
-
-
-
-
-
-class ScientistsById(Resource):
-
-    def get(self):
-        science_id = Scientist.query.first()
-        scientist = [sci.to_dict() for sci in science_id]
-        return make_response(scientist, 200)
+class ScientistsByID(Resource):
     
+    def get(self, id):
+        scientist = Scientist.query.filter_by(id=id).first().to_dict()
+        if not scientist:
+            return make_response({
+                "errors": "scientist not found"
+            }, 404)
+        
+        return make_response(
+            scientist,
+            200
+        )
 
-    def patch(self):
+
+    def patch(self, id):
         scientist = Scientist.query.filter_by(id=id).first()
+        if not scientist:
+            return make_response({
+                "errors": "scientist not found"
+            }, 404)
+
         data = request.get_json()
         try:
             for attr in data:
                 setattr(scientist, attr, data[attr])
+
             db.session.add(scientist)
-            db.commit()
+            db.session.commit()
 
         except Exception as e:
             message = {
@@ -104,41 +99,37 @@ class ScientistsById(Resource):
                 422
             )
         
-        return make_response(scientist.to_dict(), 202)
-    
+        return make_response(
+            scientist.to_dict(), 
+            201)
+        
 
 
-    def delete(self):
+    def delete(self, id):
         scientist = Scientist.query.filter_by(id=id).first()
         if not scientist:
             return make_response({
                 "errors": "scientist not found"
-            }, 422)
+            }, 404)
+
         try:
             db.session.delete(scientist)
             db.session.commit()
+
         except Exception as e:
             message = {
                 "errors": [e.__str__()]
             }
             return make_response(
-                message, 422
+                message,
+                422
             )
-
-        return make_response({"message": "scientist deleted"}, 200)
-
-
-api.add_resource(ScientistsById, "/scientists/<int:id>")
+        return make_response({
+            "scientist deleted", 200
+        })
 
 
-
-
-
-
-
-
-
-
+api.add_resource(ScientistsByID, "/scientists/<int:id>")
 
 
 
@@ -151,8 +142,11 @@ api.add_resource(ScientistsById, "/scientists/<int:id>")
 class Planets(Resource):
 
     def get(self):
-        planets = [planet.to_dict() for planet in Planet.query.all()] 
-        return make_response(planets, 200)
+        planets = [planet.to_dict() for planet in Planet.query.all()]
+        return make_response(
+            planets,
+            200
+        )
     
 api.add_resource(Planets, "/planets")
 
@@ -164,45 +158,43 @@ api.add_resource(Planets, "/planets")
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class Missions(Resource):
-    
+
     def post(self):
         data = request.get_json()
         try:
-            missions = Mission(
+            new_mission = Mission(
                 name = data["name"],
                 scientist_id = data["scientist_id"],
                 planet_id = data["planet_id"]
             )
-            db.session.add(missions)
+
+            db.session.add(new_mission)
             db.session.commit()
+
 
         except Exception as e:
             message = {
                 "errors": [e.__str__()]
             }
             return make_response(
-                message, 
+                message,
                 422
             )
+        
+        return make_response(
+            new_mission.to_dict(),
+            201
+        )
 
-        return make_response(missions.to_dict(), 201)
 
 api.add_resource(Missions, "/missions")
+
+
+
+
+
+
 
 
 
